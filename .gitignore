@@ -1,0 +1,15 @@
+# .gitignore
+
+# Python virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables file (contains secrets)
+.env
+
+# Local data and uploads (should not be in the repository)
+uploads/
+vector_db/

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doc Q&A System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 Doc Q&A System (RAG)</h1>
+            <p>Upload a PDF document and ask questions about its content.</p>
+        </header>
+
+        <div class="upload-section">
+            <h2>1. Upload Document</h2>
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" id="file-input" name="file" accept=".pdf" required>
+                <button type="submit">Upload and Process</button>
+            </form>
+            <div id="upload-status" class="status"></div>
+        </div>
+
+        <div class="qa-section">
+            <h2>2. Ask a Question</h2>
+            <div id="chat-box">
+                </div>
+            <div id="input-area">
+                <input type="text" id="question-input" placeholder="Type your question here...">
+                <button id="ask-button">Ask</button>
+            </div>
+             <div id="qa-loader" class="loader" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-input');
+            const uploadStatus = document.getElementById('upload-status');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            uploadStatus.textContent = 'Uploading and processing... This may take a moment.';
+            uploadStatus.className = 'status-processing';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    uploadStatus.textContent = result.success;
+                    uploadStatus.className = 'status-success';
+                } else {
+                    uploadStatus.textContent = 'Error: ' + result.error;
+                    uploadStatus.className = 'status-error';
+                }
+            } catch (error) {
+                uploadStatus.textContent = 'An unexpected error occurred during upload.';
+                uploadStatus.className = 'status-error';
+            }
+        });
+
+        document.getElementById('ask-button').addEventListener('click', async function() {
+            const questionInput = document.getElementById('question-input');
+            const chatBox = document.getElementById('chat-box');
+            const loader = document.getElementById('qa-loader');
+            const question = questionInput.value.trim();
+
+            if (!question) return;
+
+            // Display user's question
+            addMessage('user', question);
+            questionInput.value = '';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+                const result = await response.json();
+                
+                // Display bot's answer
+                addMessage('bot', result.answer);
+
+            } catch (error) {
+                addMessage('bot', 'Sorry, an error occurred while getting the answer.');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        function addMessage(sender, text) {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', `${sender}-message`);
+            
+            const p = document.createElement('p');
+            p.textContent = text;
+            messageElement.appendChild(p);
+
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
+        }
+    </script>
+</body>
+</html>

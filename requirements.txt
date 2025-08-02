@@ -1,0 +1,24 @@
+# Flask for web server
+flask
+
+# LangChain - pinned to compatible versions
+langchain
+langchain-core
+langchain-community
+langchain-groq
+
+# Vector store & dependencies
+faiss-cpu
+numpy
+
+# For creating text embeddings
+sentence-transformers
+
+# For reading PDF files
+PyMuPDF
+
+# For environment variables
+python-dotenv
+
+# WSGI server for deployment
+gunicorn
