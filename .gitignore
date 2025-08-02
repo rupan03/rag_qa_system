@@ -9,7 +9,3 @@ __pycache__/
 
 # Environment variables file (contains secrets)
 .env
-
-# Local data and uploads (should not be in the repository)
-uploads/
-vector_db/

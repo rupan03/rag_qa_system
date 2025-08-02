@@ -22,3 +22,7 @@ python-dotenv
 
 # WSGI server for deployment
 gunicorn
+
+# ... (all the other packages)
+pinecone-client[grpc]
+langchain-pinecone
