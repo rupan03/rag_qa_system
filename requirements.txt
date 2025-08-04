@@ -27,5 +27,3 @@ gunicorn
 pinecone-client[grpc]
 langchain-pinecone
 
-fastapi
-uvicorn[standard]
