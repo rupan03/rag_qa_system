@@ -1,18 +1,16 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
+# you will also find guides on how best to write your Dockerfile
 
-# Set the working directory inside the container
-WORKDIR /code
+FROM python:3.9
 
-# Copy the requirements file and install all dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
 
-# Copy the entire application code into the container
-COPY . .
+WORKDIR /app
 
-# Tell Hugging Face Spaces which port the app will run on
-EXPOSE 7860
+COPY --chown=user ./requirements.txt requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# The command to start the Gunicorn server
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "app:app"]
+COPY --chown=user . /app
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
