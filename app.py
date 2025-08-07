@@ -1,89 +1,84 @@
 # app.py
 
 import os
-from flask import Flask, request, render_template, jsonify
+import streamlit as st
 from dotenv import load_dotenv
 
+# Import your backend functions
 from document_processor import load_and_chunk_document, get_embeddings_model
 from vector_store import create_or_update_vector_store, load_vector_store
 from qa_system import get_answer_from_query
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# --- Initialization ---
-app = Flask(__name__)
+# --- Page Configuration ---
+st.set_page_config(
+    page_title="Doc Q&A System",
+    page_icon="📄",
+    layout="wide"
+)
 
-# Define paths
-UPLOADS_FOLDER = "uploads"
-VECTOR_DB_FOLDER = "vector_db"
-os.makedirs(UPLOADS_FOLDER, exist_ok=True)
-os.makedirs(VECTOR_DB_FOLDER, exist_ok=True)
+st.title("📄 Doc Q&A System (RAG)")
+st.write("Upload a PDF document and ask questions about its content.")
 
-# Global variables to hold the vector store and embeddings model
-vector_store = None
-embeddings_model = None
+@st.cache_resource
+def load_embedding_model():
+    """Loads the embedding model and caches it."""
+    return get_embeddings_model()
 
-def initialize_app():
-    """Initializes the embeddings model and loads the vector store if it exists."""
-    global embeddings_model, vector_store
-    print("Initializing application...")
-    embeddings_model = get_embeddings_model()
-    vector_store = load_vector_store(embeddings_model)
-    print("Application initialized.")
+# --- Main Application Logic ---
 
-# --- Flask Routes ---
+# Initialize chat history in Streamlit's session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-@app.route('/')
-def index():
-    """Renders the main web page."""
-    return render_template('index.html')
+# Display past chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    """Handles file upload and processing."""
-    global vector_store, embeddings_model
-    
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+# --- Sidebar for File Upload ---
+with st.sidebar:
+    st.header("1. Upload Your Document")
+    uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
 
-    if file:
-        file_path = os.path.join(UPLOADS_FOLDER, file.filename)
-        file.save(file_path)
+    if uploaded_file is not None:
+        if "processed_file" not in st.session_state or st.session_state.processed_file != uploaded_file.name:
+            with st.spinner('Processing document... This may take a moment.'):
+                temp_dir = "temp_uploads"
+                os.makedirs(temp_dir, exist_ok=True)
+                file_path = os.path.join(temp_dir, uploaded_file.name)
 
-        # Process the document
-        chunked_docs = load_and_chunk_document(file_path)
-        if chunked_docs:
-            create_or_update_vector_store(chunked_docs, embeddings_model)
-            # Reload the vector store to ensure it's up-to-date in memory
-            vector_store = load_vector_store(embeddings_model)
-            return jsonify({"success": f"File '{file.filename}' processed and added to the knowledge base."})
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+
+                embeddings_model = load_embedding_model()
+                chunked_docs = load_and_chunk_document(file_path)
+
+                if chunked_docs:
+                    create_or_update_vector_store(chunked_docs, embeddings_model)
+                    st.session_state.processed_file = uploaded_file.name
+                    st.success(f"File '{uploaded_file.name}' processed successfully!")
+                else:
+                    st.error("Failed to process the document.")
         else:
-            return jsonify({"error": "Failed to process the document."}), 500
+            st.info(f"File '{uploaded_file.name}' is already loaded and processed.")
 
-@app.route('/ask', methods=['POST'])
-def ask_question():
-    """Handles asking a question and returning an answer."""
-    global vector_store
-    
-    data = request.get_json()
-    question = data.get('question')
+# --- Chat Input and Q&A Logic ---
+if prompt := st.chat_input("Ask a question about your document..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    if not question:
-        return jsonify({"error": "Question is required."}), 400
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            embeddings_model = load_embedding_model()
+            vector_store = load_vector_store(embeddings_model)
 
-    if vector_store is None:
-        return jsonify({"answer": "Knowledge base is not ready. Please upload a document first."})
-
-    answer = get_answer_from_query(vector_store, question)
-    return jsonify({"answer": answer})
-
-# --- Main Execution ---
-
-if __name__ == '__main__':
-    initialize_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
-
+            if vector_store is None:
+                st.warning("Knowledge base is not ready. Please upload a document first or check your Pinecone connection.")
+            else:
+                answer = get_answer_from_query(vector_store, prompt)
+                st.markdown(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})

@@ -1,29 +1,21 @@
-# Flask for web server
-flask
+# Core application framework
+streamlit==1.39.0
 
-# LangChain - pinned to compatible versions
-langchain
-langchain-core
-langchain-community
-langchain-groq
+# For document processing and Q&A pipeline
+# Using modern, compatible versions
+langchain==0.2.10
+langchain-community==0.2.12
+langchain-core==0.2.29
+PyMuPDF==1.24.8
+sentence-transformers==3.0.1
 
-# Vector store & dependencies
-faiss-cpu
-numpy
+# For the LLM connection
+langchain-groq==0.2.0
 
-# For creating text embeddings
-sentence-transformers
+# For the vector database
+pinecone-client==4.1.1
+langchain-pinecone==0.2.0
 
-# For reading PDF files
-PyMuPDF
-
-# For environment variables
-python-dotenv
-
-# WSGI server for deployment
-gunicorn
-
-# ... (all the other packages)
-pinecone-client[grpc]
-langchain-pinecone
-
+# Other dependencies
+python-dotenv==1.0.1
+numpy==1.26.4
