@@ -1,20 +1,22 @@
 # Core application framework
 streamlit==1.39.0
 
-# For document processing and Q&A pipeline
-# Using modern, compatible versions
+# Using an up-to-date, compatible set for Python 3.13
 langchain==0.2.10
 langchain-community==0.2.12
-langchain-core==0.2.29
+langchain-core==0.2.30
+langchain-text-splitters==0.2.2
+
+# LLM and Vector Store Integrations
+langchain-groq==0.2.0
+langchain-pinecone==0.2.11
+
+# Document processing and embeddings
 PyMuPDF==1.24.8
 sentence-transformers==3.0.1
 
-# For the LLM connection
-langchain-groq==0.2.0
-
-# For the vector database
+# Database client
 pinecone-client==4.1.1
-langchain-pinecone==0.2.0
 
 # Other dependencies
 python-dotenv==1.0.1
