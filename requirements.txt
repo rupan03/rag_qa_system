@@ -1,8 +1,8 @@
 # Core application framework
 streamlit==1.39.0
 
-# Using an up-to-date, compatible set for Python 3.13
-langchain==0.2.10
+# Using a fully compatible set for Python 3.13
+langchain==0.2.13
 langchain-community==0.2.12
 langchain-core==0.2.30
 langchain-text-splitters==0.2.2
